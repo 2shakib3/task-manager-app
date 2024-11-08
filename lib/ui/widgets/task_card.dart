@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:task_management_app/data/models/task_model.dart';
 import 'package:task_management_app/ui/utils/app_colors.dart';
 
 class TaskCard extends StatefulWidget {
   const TaskCard({
-    super.key,
+    super.key, required this.taskModel,
   });
+
+  final TaskModel taskModel;
 
   @override
   State<TaskCard> createState() => _TaskCardState();
@@ -23,17 +26,17 @@ class _TaskCardState extends State<TaskCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Title of The task',
+              widget.taskModel.title ?? '',
               style: Theme
                   .of(context)
                   .textTheme
                   .titleSmall,
             ),
-            const Text(
-              'Description of Task',
+            Text(
+              widget.taskModel.description ?? '',
             ),
-            const Text(
-              'Date: 12/12/2024',
+            Text(
+              'Date: ${widget.taskModel.createdDate ?? ''}',
             ),
             const SizedBox(
               height: 8,
@@ -50,7 +53,7 @@ class _TaskCardState extends State<TaskCard> {
                       icon: const Icon(Icons.edit),
                     ),
                     IconButton(
-                      onPressed: () {},
+                      onPressed: _onTapDeleteButton,
                       icon: const Icon(Icons.delete),
                     ),
                   ],
@@ -77,14 +80,16 @@ class _TaskCardState extends State<TaskCard> {
           }).toList(),
         ),
         actions: [
-          TextButton(onPressed: () {}, child: Text('Cancel'),),
-          TextButton(onPressed: () {}, child: Text('Save'),),
+          TextButton(onPressed: () {}, child: const Text('Cancel'),),
+          TextButton(onPressed: () {}, child: const Text('Save'),),
         ],
       );
     });
   }
 
-  void _onTapDeleteButton() {}
+  void _onTapDeleteButton() {
+    // TODO: on Tap delete task
+  }
 
   Widget _buildTaskStatusChip() {
     return Chip(
