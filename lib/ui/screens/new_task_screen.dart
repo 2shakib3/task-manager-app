@@ -24,14 +24,13 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
   void initState() {
     super.initState();
     _getNewTaskList();
-
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: RefreshIndicator(
-        onRefresh: () async{
+        onRefresh: () async {
           _getNewTaskList();
         },
         child: Column(
@@ -44,7 +43,10 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                 child: ListView.separated(
                   itemCount: _newTaskList.length,
                   itemBuilder: (context, index) {
-                    return TaskCard(taskModel: _newTaskList[index]);
+                    return TaskCard(
+                      taskModel: _newTaskList[index],
+                      onRefreshList: _getNewTaskList,
+                    );
                   },
                   separatorBuilder: (context, index) {
                     return const SizedBox(
@@ -93,14 +95,14 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
     );
   }
 
-  void _onTapAddFAB() async{
+  void _onTapAddFAB() async {
     final bool? shouldRefresh = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const AddNewTaskScreen(),
       ),
     );
-    if(shouldRefresh == true) {
+    if (shouldRefresh == true) {
       _getNewTaskList();
     }
   }
@@ -110,9 +112,10 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
     _getNewTaskListInProgress = true;
     setState(() {});
     NetworkResponse response =
-    await NetworkCaller.getRequest(url: Urls.newTaskList);
+        await NetworkCaller.getRequest(url: Urls.newTaskList);
     if (response.isSuccess) {
-      final TaskListModel taskListModel = TaskListModel.fromJson(response.responseData);
+      final TaskListModel taskListModel =
+          TaskListModel.fromJson(response.responseData);
       _newTaskList = taskListModel.taskList ?? [];
     } else {
       ShowSnackBarMessage(context, response.errorMessage, true);
@@ -120,6 +123,4 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
     _getNewTaskListInProgress = false;
     setState(() {});
   }
-
 }
-
