@@ -1,25 +1,28 @@
+
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:task_management_app/ui/utils/assets_path.dart';
+import 'package:flutter_svg/svg.dart';
+import '../utils/assets_path.dart';
 
 
+// ignore: must_be_immutable
 class ScreenBackground extends StatelessWidget {
-  const ScreenBackground({super.key, required this.child});
-
-  final Widget child;
+  ScreenBackground({super.key, required this.child});
+  Widget child;
 
   @override
   Widget build(BuildContext context) {
-    Size screenSize = MediaQuery.sizeOf(context);
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
     return Stack(
       children: [
         SvgPicture.asset(
-          AssetsPath.backgroundSvg,
+          AssetPath.backgroundPath, 
+
           fit: BoxFit.cover,
-          height: screenSize.height,
-          width: screenSize.width,
+          height: height,
+          width: width,
         ),
-        SafeArea(child: child),
+        SafeArea(child: child)
       ],
     );
   }

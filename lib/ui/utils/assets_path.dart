@@ -1,6 +1,8 @@
-class AssetsPath {
-  static const String _imagePath = 'assets/images';
+class AssetPath {
+  static const String imagePath = "assets/images";
 
-  static const String backgroundSvg = '$_imagePath/background.svg';
-  static const String logoSvg = '$_imagePath/logo.svg';
+  static const String backgroundPath = '$imagePath/background.svg';
+  static const String logoPath = '$imagePath/logo.svg';
+
+
 }

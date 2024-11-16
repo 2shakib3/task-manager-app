@@ -1,204 +1,248 @@
-import 'dart:convert';
-import 'dart:io';
+// import 'dart:convert';
+
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:task_management_app/ui/controller/auth_controller.dart';
+import 'package:task_management_app/ui/controller/update_profile_controller.dart';
+import 'package:task_management_app/ui/widgets/centered_circular_progress_indicator.dart';
+import 'package:task_management_app/ui/widgets/snack_bar_message.dart';
 import 'package:task_management_app/ui/widgets/tm_app_bar.dart';
-import 'package:task_management_app/data/service/network_caller.dart';
-import 'package:task_management_app/data/models/network_response.dart';
-import 'package:task_management_app/data/utils/urls.dart';
+
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  static const String updateProfileScreen = '/update-profile';
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final TextEditingController _emailTEController = TextEditingController();
-  final TextEditingController _firstNameTEController = TextEditingController();
-  final TextEditingController _lastNameTEController = TextEditingController();
-  final TextEditingController _mobileTEController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  File? _profileImage;
+  final TextEditingController emailCtrl = TextEditingController();
+  final TextEditingController firstNameCtrl = TextEditingController();
+  final TextEditingController lastNameCtrl = TextEditingController();
+  final TextEditingController phoneCtrl = TextEditingController();
+  final TextEditingController passwordCtrl = TextEditingController();
 
-  final ImagePicker _picker = ImagePicker();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  final UpdateProfileController updateProfileController =
+      Get.find<UpdateProfileController>();
+
+  XFile? selectedImage;
 
   @override
   void initState() {
     super.initState();
-    _setUserData();
+    setUserdata();
   }
 
-  void _setUserData() {
-    // Prefill the form fields with user data
-    _emailTEController.text = AuthController.userData?.email ?? 'email@mail.com';
-    _firstNameTEController.text = AuthController.userData?.firstName ?? 'First Name';
-    _lastNameTEController.text = AuthController.userData?.lastName ?? 'Last Name';
-    _mobileTEController.text = AuthController.userData?.mobile ?? '01828066845';
-  }
-
-  Future<void> _pickImage() async {
-    // Pick an image from the gallery or camera
-    final XFile? pickedFile = await _picker.pickImage(
-      source: ImageSource.gallery, // Change to ImageSource.camera for camera
-      maxWidth: 400,
-      maxHeight: 400,
-    );
-
-    if (pickedFile != null) {
-      setState(() {
-        _profileImage = File(pickedFile.path);
-      });
-    }
+  void setUserdata() {
+    emailCtrl.text = AuthController.userData!.email ?? '';
+    firstNameCtrl.text = AuthController.userData!.firstName ?? '';
+    lastNameCtrl.text = AuthController.userData!.lastName ?? '';
+    phoneCtrl.text = AuthController.userData!.mobile ?? '';
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const TMAppBar(
-        isProfileScreenOpen: true,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 48),
-              Text(
-                'Update Profile',
-                style: Theme.of(context)
-                    .textTheme
-                    .displaySmall
-                    ?.copyWith(fontWeight: FontWeight.w500),
+    TextTheme textTheme = Theme.of(context).textTheme;
+    return PopScope(
+      child: Scaffold(
+        appBar: TMappBar(
+          isProfileScreenOpen: true,
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(
+                    height: 50,
+                  ),
+                  Text(
+                    "Update Profile",
+                    style: textTheme.displaySmall
+                        ?.copyWith(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(0),
+                    ),
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: pickedImage,
+                          child: Container(
+                            height: 50,
+                            width: 100,
+                            decoration: const BoxDecoration(
+                              color: Colors.grey,
+                              borderRadius: BorderRadius.only(
+                                  topRight: Radius.circular(10),
+                                  bottomRight: Radius.circular(10)),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'Photos',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 16),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 10,
+                        ),
+                        Text(getSelectedPhotoTitle())
+                      ],
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  TextFormField(
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Enter email';
+                      }
+                      return null;
+                    },
+                    enabled: false,
+                    keyboardType: TextInputType.emailAddress,
+                    controller: emailCtrl,
+                    decoration: const InputDecoration(
+                      hintText: "Email",
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 8,
+                  ),
+                  TextFormField(
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Enter firstname';
+                      }
+                      return null;
+                    },
+                    controller: firstNameCtrl,
+                    decoration: const InputDecoration(
+                      hintText: "First name",
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  TextFormField(
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Enter lastname';
+                      }
+                      return null;
+                    },
+                    controller: lastNameCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      hintText: "Last name",
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 8,
+                  ),
+                  TextFormField(
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Enter phone number';
+                      }
+                      return null;
+                    },
+                    controller: phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      hintText: "Phone",
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  TextFormField(
+                    controller: passwordCtrl,
+                    decoration: const InputDecoration(
+                      hintText: "password",
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  GetBuilder<UpdateProfileController>(
+                    builder: (controller) {
+                      return Visibility(
+                        visible: !controller.inprogress,
+                        replacement: const CenterCircularProgressIndicator(),
+                        child: ElevatedButton(
+                          onPressed: updateProfileData,
+                          child: const Icon(Icons.arrow_circle_right_outlined),
+                        ),
+                      );
+                    },
+                  )
+                ],
               ),
-              const SizedBox(height: 24),
-              _buildPhotoPicker(),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _firstNameTEController,
-                decoration: const InputDecoration(
-                  hintText: 'First Name',
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _lastNameTEController,
-                decoration: const InputDecoration(
-                  hintText: 'Last Name',
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _emailTEController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  hintText: 'Email',
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _mobileTEController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  hintText: 'Mobile',
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  hintText: 'Password',
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _onTapUpdateButton,
-                child: const Icon(Icons.arrow_circle_right_outlined),
-              ),
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // Photo picker widget that allows the user to select a photo
-  Widget _buildPhotoPicker() {
-    return GestureDetector(
-      onTap: _pickImage,
-      child: Container(
-        height: 100,
-        width: 100,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: Colors.grey[300],
-        ),
-        alignment: Alignment.center,
-        child: _profileImage == null
-            ? const Text(
-          'photo',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.black),
-        )
-            : ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.file(
-            _profileImage!,
-            width: 100,
-            height: 100,
-            fit: BoxFit.cover,
-          ),
-        ),
-      ),
-    );
+  void updateProfileBTN() {
+    if (_formKey.currentState!.validate()) {
+      updateProfileData();
+    }
   }
 
-  void _onTapUpdateButton() async {
-    final updatedProfileData = {
-      'email': _emailTEController.text,
-      'firstName': _firstNameTEController.text,
-      'lastName': _lastNameTEController.text,
-      'mobile': _mobileTEController.text,
-    };
-
-    // Only add the password if it is not empty
-    if (_passwordController.text.isNotEmpty) {
-      updatedProfileData['password'] = _passwordController.text;
+  Future<void> pickedImage() async {
+    ImagePicker imagePicker = ImagePicker();
+    XFile? pickedImage =
+        await imagePicker.pickImage(source: ImageSource.gallery);
+    if (pickedImage != null) {
+      selectedImage = pickedImage;
+      setState(() {});
     }
+  }
 
-    // Include the profile image if it is updated
-    if (_profileImage != null) {
-      updatedProfileData['profileImage'] = (await _getImageBytes())!;
+  String getSelectedPhotoTitle() {
+    if (selectedImage != null) {
+      return selectedImage!.name;
     }
+    return 'Selected photo';
+  }
 
-    NetworkResponse response = await NetworkCaller.postRequest(
-      url: Urls.profileUpdate,
-      body: updatedProfileData,
-    );
+  Future<void> updateProfileData() async {
+    final bool result = await updateProfileController.updateProfileData(
+        emailCtrl.text.trim(),
+        firstNameCtrl.text.trim(),
+        lastNameCtrl.text.trim(),
+        phoneCtrl.text.trim(),
+        passwordCtrl.text,
+        selectedImage);
 
-    if (response.isSuccess) {
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile Updated')),
-      );
+    if (result) {
+      showSnackBarMessage(context, 'Profile updated');
+      Get.back();
     } else {
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${response.errorMessage}')),
-      );
+      showSnackBarMessage(context, updateProfileController.errorMessage!, true);
     }
-  }
-
-  Future<String?> _getImageBytes() async {
-    if (_profileImage != null) {
-      final bytes = await _profileImage!.readAsBytes();
-      return base64Encode(bytes);
-    }
-    return null;
   }
 }

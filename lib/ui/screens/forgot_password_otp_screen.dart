@@ -1,100 +1,155 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:task_management_app/data/models/network_response.dart';
-import 'package:task_management_app/data/service/network_caller.dart';
-import 'package:task_management_app/data/utils/urls.dart';
+import 'package:get/get.dart';
+import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:task_management_app/ui/controller/send_OTP_controller.dart';
+import 'package:task_management_app/ui/controller/varification_controller.dart';
 import 'package:task_management_app/ui/screens/reset_password_screen.dart';
-import 'package:task_management_app/ui/widgets/snack_bar_message.dart';
+import 'package:task_management_app/ui/screens/signin_screen.dart';
+import 'package:task_management_app/ui/utils/app_colors.dart';
 import 'package:task_management_app/ui/widgets/screen_background.dart';
+import 'package:task_management_app/ui/widgets/snack_bar_message.dart';
 
-class ForgotPasswordOtpScreen extends StatefulWidget {
-  final String email;
 
-  const ForgotPasswordOtpScreen({Key? key, required this.email})
-      : super(key: key);
+
+class FotgotPasswordOtpScreen extends StatefulWidget {
+  FotgotPasswordOtpScreen({super.key});
+  
+  static const String varificationScreen = '/otp-screen/varification-screen';
 
   @override
-  State<ForgotPasswordOtpScreen> createState() =>
-      _ForgotPasswordOtpScreenState();
+  State<FotgotPasswordOtpScreen> createState() =>
+      _FotgotPasswordOtpScreenState();
 }
 
-class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _otpTEController = TextEditingController();
-  bool _inProgress = false;
+class _FotgotPasswordOtpScreenState extends State<FotgotPasswordOtpScreen> {
+  final TextEditingController otpCtrl = TextEditingController();
+  // final GlobalKey<FormState> _globalKey = GlobalKey<FormState>();
+  final VarificationController varificationController =
+      Get.find<VarificationController>();
+  
+  
 
-  Future<void> _verifyOtp() async {
-    _inProgress = true;
-    setState(() {});
-
-    final String url = Urls.verifyOTP(widget.email, _otpTEController.text.trim());
-
-    // Call the NetworkCaller method without needing to pass token again
-    NetworkResponse response = await NetworkCaller.getRequest(url: url);
-
-    _inProgress = false;
-    setState(() {});
-
-    if (response.isSuccess) {
-      ShowSnackBarMessage(context, 'OTP verified successfully!', false);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ResetPasswordScreen(
-            email: widget.email,
-            otp: _otpTEController.text.trim(),
-          ),
-        ),
-      );
-    } else {
-      ShowSnackBarMessage(context, response.errorMessage ?? 'Invalid OTP', true);
-    }
-  }
-
-
-
+  
   @override
   Widget build(BuildContext context) {
+    TextTheme textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       body: ScreenBackground(
+          child: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(
+                height: 80,
+              ),
+              Text(
+                "Pin Varification",
+                style: textTheme.displaySmall
+                    ?.copyWith(fontWeight: FontWeight.w500),
+              ),
+              Text(
+                "A 6 digit varification otp has been send your email address",
+                style: textTheme.titleMedium?.copyWith(color: Colors.grey),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              buildOTP_InputForm(),
+              const SizedBox(
+                height: 30,
+              ),
+              buildHaveAnAccountSection()
+            ],
+          ),
+        ),
+      )),
+    );
+  }
+
+  Widget buildHaveAnAccountSection() {
+    return Center(
+      child: Column(
+        children: [
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  letterSpacing: 0.5),
+              text: "Have an account? ",
               children: [
-                Text(
-                  'Verify OTP',
-                  style: Theme.of(context).textTheme.displaySmall,
-                ),
-                const SizedBox(height: 24),
-                TextFormField(
-                  controller: _otpTEController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(hintText: 'Enter OTP'),
-                  validator: (value) =>
-                  value?.isEmpty ?? true ? 'Enter a valid OTP' : null,
-                ),
-                const SizedBox(height: 24),
-                Visibility(
-                  visible: !_inProgress,
-                  replacement: const CircularProgressIndicator(),
-                  child: ElevatedButton(
-                    onPressed: _verifyOtp,
-                    child: const Text('Verify OTP'),
-                  ),
+                TextSpan(
+                  style: const TextStyle(color: AppColors.themeColor),
+                  text: 'Sign In',
+                  recognizer: TapGestureRecognizer()..onTap = onTapSignIn,
                 ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  @override
-  void dispose() {
-    _otpTEController.dispose();
-    super.dispose();
+  Widget buildOTP_InputForm() {
+    return Column(
+      children: [
+        PinCodeTextField(
+          controller: otpCtrl,
+          length: 6,
+          animationType: AnimationType.fade,
+          keyboardType: TextInputType.number,
+          pinTheme: PinTheme(
+              shape: PinCodeFieldShape.box,
+              borderRadius: BorderRadius.circular(5),
+              fieldHeight: 50,
+              fieldWidth: 40,
+              activeFillColor: Colors.white,
+              inactiveFillColor: Colors.white,
+              selectedFillColor: Colors.white),
+          animationDuration: const Duration(milliseconds: 300),
+          backgroundColor: Colors.transparent,
+          enableActiveFill: true,
+          appContext: context,
+        ),
+        const SizedBox(
+          height: 20,
+        ),
+        ElevatedButton(
+          onPressed: onTapNextButton,
+          child: const Icon(Icons.arrow_circle_right_outlined),
+        ),
+      ],
+    );
+  }
+
+  Future<void> onTapNextButton() async {
+    final String userEmail = Get.find<SendOtpController>().userEmail ?? '';
+    final bool result =
+        await varificationController.varification(userEmail, otpCtrl.text);
+
+    if (result) {
+      showSnackBarMessage(context, 'Varification Done');
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ResetPasswordScreen(),
+        ),
+      );
+    } else {
+      showSnackBarMessage(context, 'Invalid code', true);
+    }
+  }
+
+  void onTapSignIn() {
+    Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const SignInScreen()),
+        (_) => false);
   }
 }

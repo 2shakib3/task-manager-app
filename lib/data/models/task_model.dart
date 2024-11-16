@@ -1,4 +1,5 @@
-class TaskModel {
+
+class TaskData {
   String? sId;
   String? title;
   String? description;
@@ -6,15 +7,15 @@ class TaskModel {
   String? email;
   String? createdDate;
 
-  TaskModel(
+  TaskData(
       {this.sId,
-        this.title,
-        this.description,
-        this.status,
-        this.email,
-        this.createdDate});
+      this.title,
+      this.description,
+      this.status,
+      this.email,
+      this.createdDate});
 
-  TaskModel.fromJson(Map<String, dynamic> json) {
+  TaskData.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
     title = json['title'];
     description = json['description'];
@@ -22,4 +23,6 @@ class TaskModel {
     email = json['email'];
     createdDate = json['createdDate'];
   }
+
+  
 }

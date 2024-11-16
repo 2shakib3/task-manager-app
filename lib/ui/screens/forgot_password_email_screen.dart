@@ -1,95 +1,149 @@
-import 'package:flutter/material.dart';
-import 'package:task_management_app/data/models/network_response.dart';
-import 'package:task_management_app/data/service/network_caller.dart';
-import 'package:task_management_app/data/utils/urls.dart';
-import 'package:task_management_app/ui/screens/forgot_password_otp_screen.dart';
-import 'package:task_management_app/ui/widgets/snack_bar_message.dart';
-import 'package:task_management_app/ui/widgets/screen_background.dart';
 
-class ForgotPasswordEmailScreen extends StatefulWidget {
-  const ForgotPasswordEmailScreen({Key? key}) : super(key: key);
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:task_management_app/ui/controller/send_OTP_controller.dart';
+import 'package:task_management_app/ui/utils/app_colors.dart';
+import 'package:task_management_app/ui/widgets/centered_circular_progress_indicator.dart';
+import 'package:task_management_app/ui/widgets/screen_background.dart';
+import 'package:task_management_app/ui/widgets/snack_bar_message.dart';
+
+
+import 'Forgot_Password_OTP_Screen.dart';
+
+class FotgotPasswordEmailScreen extends StatefulWidget {
+   FotgotPasswordEmailScreen({super.key});
+
+   static const String otpScreen = '/otp-screen';
 
   @override
-  State<ForgotPasswordEmailScreen> createState() =>
-      _ForgotPasswordEmailScreenState();
+  State<FotgotPasswordEmailScreen> createState() =>
+      _FotgotPasswordEmailScreenState();
 }
 
-class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailTEController = TextEditingController();
-  bool _inProgress = false;
+class _FotgotPasswordEmailScreenState extends State<FotgotPasswordEmailScreen> {
+  final TextEditingController emailCtrl = TextEditingController();
+  // final GlobalKey<FormState> _globalKey = GlobalKey<FormState>();
+  final SendOtpController sendOtpController = Get.find<SendOtpController>();
 
-  Future<void> _sendOtp() async {
-    if (!_formKey.currentState!.validate()) return;
 
-    _inProgress = true;
-    setState(() {});
 
-    final String url = Urls.sendOTP(_emailTEController.text.trim());
-    NetworkResponse response = await NetworkCaller.getRequest(url: url);
-
-    _inProgress = false;
-    setState(() {});
-
-    if (response.isSuccess) {
-      ShowSnackBarMessage(context, 'OTP sent successfully!', false);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ForgotPasswordOtpScreen(
-            email: _emailTEController.text.trim(),
-          ),
-        ),
-      );
-    } else {
-      ShowSnackBarMessage(
-          context, response.errorMessage ?? 'Failed to send OTP', true);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
+    TextTheme textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       body: ScreenBackground(
+          child: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(
+                height: 80,
+              ),
+              Text(
+                "Your Email Adress",
+                style: textTheme.displaySmall
+                    ?.copyWith(fontWeight: FontWeight.w500),
+              ),
+              Text(
+                "A 6 digit varification otp will be send your email address",
+                style: textTheme.titleMedium?.copyWith(color: Colors.grey),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              buildEmailInputForm(),
+              const SizedBox(
+                height: 30,
+              ),
+              buildHaveAnAccountSection()
+            ],
+          ),
+        ),
+      )),
+    );
+  }
+
+  Widget buildHaveAnAccountSection() {
+    return Center(
+      child: Column(
+        children: [
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  letterSpacing: 0.5),
+              text: "Have an account? ",
               children: [
-                Text(
-                  'Forgot Password',
-                  style: Theme.of(context).textTheme.displaySmall,
-                ),
-                const SizedBox(height: 24),
-                TextFormField(
-                  controller: _emailTEController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(hintText: 'Email Address'),
-                  validator: (value) =>
-                  value?.isEmpty ?? true ? 'Enter a valid email' : null,
-                ),
-                const SizedBox(height: 24),
-                Visibility(
-                  visible: !_inProgress,
-                  replacement: const CircularProgressIndicator(),
-                  child: ElevatedButton(
-                    onPressed: _sendOtp,
-                    child: const Text('Send OTP'),
-                  ),
+                TextSpan(
+                  style: const TextStyle(color: AppColors.themeColor),
+                  text: 'Sign In',
+                  recognizer: TapGestureRecognizer()..onTap = onTapSignIn,
                 ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  @override
-  void dispose() {
-    _emailTEController.dispose();
-    super.dispose();
+  Widget buildEmailInputForm() {
+    return Form(
+      child: Column(
+        children: [
+          TextFormField(
+            controller: emailCtrl,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(
+              hintText: "Email",
+            ),
+          ),
+          const SizedBox(
+            height: 20,
+          ),
+          GetBuilder<SendOtpController>(builder: (controller) {
+            return Visibility(
+            visible: !controller.inprogress,
+            replacement: const CenterCircularProgressIndicator(),
+            child: ElevatedButton(
+              onPressed: onTapNextButton,
+              child: const Icon(Icons.arrow_circle_right_outlined),
+            ),
+          );
+          },)
+        ],
+      ),
+    );
+  }
+
+  void onTapNextButton() {
+    
+      sendOTP();
+  }
+
+  Future<void> sendOTP() async {
+    final bool result = await sendOtpController.sendOTP(emailCtrl.text);
+    
+    if (result) {
+      showSnackBarMessage(context, "OTP has been sent");
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>  FotgotPasswordOtpScreen(),
+          ));
+    } else {
+      showSnackBarMessage(context, "OTP failed sent", true);
+    }
+  }
+
+  void onTapSignIn() {
+    Navigator.pop(context);
   }
 }

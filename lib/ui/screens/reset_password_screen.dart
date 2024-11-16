@@ -1,102 +1,165 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:task_management_app/data/models/network_response.dart';
-import 'package:task_management_app/data/service/network_caller.dart';
-import 'package:task_management_app/data/utils/urls.dart';
+import 'package:get/get.dart';
+import 'package:task_management_app/ui/controller/reset_password_controller.dart';
+import 'package:task_management_app/ui/controller/varification_controller.dart';
 import 'package:task_management_app/ui/screens/signin_screen.dart';
-import 'package:task_management_app/ui/widgets/snack_bar_message.dart';
+import 'package:task_management_app/ui/utils/app_colors.dart';
 import 'package:task_management_app/ui/widgets/screen_background.dart';
+import 'package:task_management_app/ui/widgets/snack_bar_message.dart';
+
 
 class ResetPasswordScreen extends StatefulWidget {
-  final String email;
-  final String otp;
-
-  const ResetPasswordScreen({Key? key, required this.email, required this.otp})
-      : super(key: key);
-
+  ResetPasswordScreen({super.key,});
+  
+  static const String resetPasswordScreen = '/reset-password';
+  
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _passwordTEController = TextEditingController();
-  bool _inProgress = false;
-
-  Future<void> _resetPassword() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    _inProgress = true;
-    setState(() {});
-
-    final Map<String, dynamic> body = {
-      "email": widget.email,
-      "OTP": widget.otp,
-      "password": _passwordTEController.text.trim(),
-    };
-
-    NetworkResponse response =
-    await NetworkCaller.postRequest(url: Urls.resetPassword, body: body);
-
-    _inProgress = false;
-    setState(() {});
-
-    if (response.isSuccess) {
-      ShowSnackBarMessage(context, 'Password reset successfully!', false);
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const SigninScreen()),
-            (_) => false,
-      );
-    } else {
-      ShowSnackBarMessage(
-          context, response.errorMessage ?? 'Password reset failed', true);
-    }
-  }
+  final TextEditingController passwordCtrl = TextEditingController();
+  final TextEditingController confirmPasswordCtrl = TextEditingController();
+  final GlobalKey<FormState> _globalKey = GlobalKey<FormState>();
+  final ResetPasswordController resetPasswordController =
+      Get.find<ResetPasswordController>();
 
   @override
   Widget build(BuildContext context) {
+    TextTheme textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       body: ScreenBackground(
+          child: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(
+                height: 80,
+              ),
+              Text(
+                "Set Password",
+                style: textTheme.displaySmall
+                    ?.copyWith(fontWeight: FontWeight.w500),
+              ),
+              Text(
+                "Minimum number of password should be 8 letters",
+                style: textTheme.titleMedium?.copyWith(color: Colors.grey),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              buildResetPasswordForm(),
+              const SizedBox(
+                height: 30,
+              ),
+              buildHaveAnAccountSection()
+            ],
+          ),
+        ),
+      )),
+    );
+  }
+
+  Widget buildHaveAnAccountSection() {
+    return Center(
+      child: Column(
+        children: [
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  letterSpacing: 0.5),
+              text: "Have an account? ",
               children: [
-                Text(
-                  'Reset Password',
-                  style: Theme.of(context).textTheme.displaySmall,
-                ),
-                const SizedBox(height: 24),
-                TextFormField(
-                  controller: _passwordTEController,
-                  obscureText: true,
-                  decoration:
-                  const InputDecoration(hintText: 'Enter new password'),
-                  validator: (value) =>
-                  value?.isEmpty ?? true ? 'Enter a valid password' : null,
-                ),
-                const SizedBox(height: 24),
-                Visibility(
-                  visible: !_inProgress,
-                  replacement: const CircularProgressIndicator(),
-                  child: ElevatedButton(
-                    onPressed: _resetPassword,
-                    child: const Text('Reset Password'),
-                  ),
+                TextSpan(
+                  style: const TextStyle(color: AppColors.themeColor),
+                  text: 'Sign In',
+                  recognizer: TapGestureRecognizer()..onTap = onTapSignIn,
                 ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  @override
-  void dispose() {
-    _passwordTEController.dispose();
-    super.dispose();
+  Widget buildResetPasswordForm() {
+    return Form(
+      key: _globalKey,
+      child: Column(
+        children: [
+          TextFormField(
+            validator: (value) {
+              if (value!.isEmpty) {
+                return 'Enter Password';
+              }
+              return null;
+            },
+            controller: passwordCtrl,
+            decoration: const InputDecoration(
+              hintText: "Password",
+            ),
+          ),
+          const SizedBox(
+            height: 8,
+          ),
+          TextFormField(
+            controller: confirmPasswordCtrl,
+            validator: (value) {
+              if (value!.isEmpty) {
+                return 'Enter Password';
+              } else if (value != passwordCtrl.text) {
+                return 'Password not match';
+              }
+              return null;
+            },
+            decoration: const InputDecoration(
+              hintText: "Confirm Password",
+            ),
+          ),
+          const SizedBox(
+            height: 20,
+          ),
+          ElevatedButton(
+            onPressed: onTapNextButton,
+            child: const Icon(Icons.arrow_circle_right_outlined),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void onTapNextButton() {
+    if (_globalKey.currentState!.validate()) {
+      changePassword();
+    } else {
+      print('Wrong');
+    }
+  }
+
+  Future<void> changePassword() async {
+    final email = Get.find<VarificationController>().userEmail;
+    final otp = Get.find<VarificationController>().userOtp;
+    print('Controller email and otp : $email $otp');
+    final bool result = await resetPasswordController.changePassword(
+        email!,otp!, passwordCtrl.text);
+
+    if (result) {
+      showSnackBarMessage(context, 'Successfully password changed', true);
+      Get.offAllNamed(SignInScreen.signInScreen);
+    } else {
+      showSnackBarMessage(context, resetPasswordController.errorMessage!, true);
+    }
+  }
+
+  void onTapSignIn() {
+     Get.offAllNamed(SignInScreen.signInScreen);
   }
 }

@@ -1,3 +1,4 @@
+
 class UserModel {
   String? sId;
   String? email;
@@ -7,18 +8,18 @@ class UserModel {
   String? photo;
   String? createdDate;
 
-  String get fullName {
-    return '${firstName ?? ''} ${lastName ?? ''}';
+  String? get fullname {
+       return '${firstName ?? ''} ${lastName ?? ''}';
   }
 
   UserModel(
       {this.sId,
-        this.email,
-        this.firstName,
-        this.lastName,
-        this.mobile,
-        this.photo,
-        this.createdDate});
+      this.email,
+      this.firstName,
+      this.lastName,
+      this.mobile,
+      this.photo,
+      this.createdDate});
 
   UserModel.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
@@ -31,14 +32,14 @@ class UserModel {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['_id'] = sId;
-    data['email'] = email;
-    data['firstName'] = firstName;
-    data['lastName'] = lastName;
-    data['mobile'] = mobile;
-    data['photo'] = photo;
-    data['createdDate'] = createdDate;
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['_id'] = this.sId;
+    data['email'] = this.email;
+    data['firstName'] = this.firstName;
+    data['lastName'] = this.lastName;
+    data['mobile'] = this.mobile;
+    data['photo'] = this.photo;
+    data['createdDate'] = this.createdDate;
     return data;
   }
 }

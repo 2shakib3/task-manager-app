@@ -1,44 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:task_management_app/ui/screens/Home_New_screen.dart';
 import 'package:task_management_app/ui/screens/cancelled_task_screen.dart';
 import 'package:task_management_app/ui/screens/completed_task_screen.dart';
-import 'package:task_management_app/ui/screens/new_task_screen.dart';
 import 'package:task_management_app/ui/screens/progress_task_screen.dart';
 import 'package:task_management_app/ui/widgets/tm_app_bar.dart';
 
-class MainBottomNavBarScreen extends StatefulWidget {
-  const MainBottomNavBarScreen({super.key});
+class MainButtonNavbarScreen extends StatefulWidget {
+  const MainButtonNavbarScreen({super.key});
+
+  static const String homeScreen = '/homepage';
 
   @override
-  State<MainBottomNavBarScreen> createState() => _MainBottomNavBarScreenState();
+  State<MainButtonNavbarScreen> createState() => _MainButtonNavbarScreenState();
 }
 
-class _MainBottomNavBarScreenState extends State<MainBottomNavBarScreen> {
-  int _selectedIndex = 0;
-  final List<Widget> _screen = const [
-    NewTaskScreen(),
-    CompletedTaskScreen(),
-    CancelledTaskScreen(),
-    ProgressTaskScreen(),
+class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
+  int selectedKey = 0;
+  List<Widget> screens = const [
+    NewScreen(),
+    CompletedScreen(),
+    CancelScreen(),
+    ProgressScreen()
   ];
+  
+  @override
+  void initState() {
+    super.initState();
+    print('Hello im main screen');
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const TMAppBar(),
-      body: _screen[_selectedIndex],
+      appBar: TMappBar(),
+      body: screens[selectedKey],
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (int Index) {
-          _selectedIndex = Index;
+        selectedIndex: selectedKey,
+        onDestinationSelected: (index) {
+          selectedKey = index;
           setState(() {});
         },
         destinations: const [
           NavigationDestination(icon: Icon(Icons.new_label), label: 'New'),
           NavigationDestination(
               icon: Icon(Icons.check_box), label: 'Completed'),
-          NavigationDestination(icon: Icon(Icons.close), label: 'Cancelled'),
-          NavigationDestination(
-              icon: Icon(Icons.access_alarm_outlined), label: 'Progress'),
+          NavigationDestination(icon: Icon(Icons.close), label: 'Canceled'),
+          NavigationDestination(icon: Icon(Icons.circle), label: 'Progress'),
         ],
       ),
     );
