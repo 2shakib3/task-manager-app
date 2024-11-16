@@ -1,35 +1,36 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:task_management_app/data/models/user_model.dart';
 
 class AuthController {
-  static const String accessTokenKey = 'access-token';
-  static const String userDataKey = 'user-data';
+  static const String _accessTokenKey = 'access-token';
+  static const String _userDataKey = 'user-data';
 
   static String? accessToken;
   static UserModel? userData;
 
   static Future<void> saveAccessToken(String token) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    await sharedPreferences.setString(accessTokenKey, token);
+    await sharedPreferences.setString(_accessTokenKey, token);
     accessToken = token;
   }
 
   static Future<String?> getAccessToken() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    String? token = sharedPreferences.getString(accessTokenKey);
+    String? token = sharedPreferences.getString(_accessTokenKey);
     accessToken = token;
     return token;
   }
 
   static Future<void> saveUserData(UserModel userModel) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    await sharedPreferences.setString(userDataKey, jsonEncode(userModel.toJson()));
+    await sharedPreferences.setString(_userDataKey, jsonEncode(userModel.toJson()));
     userData = userModel;
   }
 
   static Future<UserModel?> getUserData() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    String? userEncodeData = sharedPreferences.getString(userDataKey);
+    String? userEncodeData = sharedPreferences.getString(_userDataKey);
     if (userEncodeData == null) {
       return null;
     }
@@ -44,32 +45,9 @@ class AuthController {
 
   static Future<void> clearUserToken() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    await sharedPreferences.remove(accessTokenKey);
-    await sharedPreferences.remove(userDataKey);
+    await sharedPreferences.remove(_accessTokenKey);
+    await sharedPreferences.remove(_userDataKey);
     accessToken = null;
     userData = null;
-  }
-}
-
-// Define your UserModel class
-class UserModel {
-  // Example fields
-  final String name;
-  final String email;
-
-  UserModel({required this.name, required this.email});
-
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'email': email,
-    };
-  }
-
-  static UserModel fromJson(Map<String, dynamic> json) {
-    return UserModel(
-      name: json['name'],
-      email: json['email'],
-    );
   }
 }

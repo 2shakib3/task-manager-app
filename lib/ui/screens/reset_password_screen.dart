@@ -1,49 +1,89 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:task_management_app/data/models/network_response.dart';
+import 'package:task_management_app/data/service/network_caller.dart';
+import 'package:task_management_app/data/utils/urls.dart';
 import 'package:task_management_app/ui/screens/signin_screen.dart';
-import 'package:task_management_app/ui/utils/app_colors.dart';
+import 'package:task_management_app/ui/widgets/snack_bar_message.dart';
 import 'package:task_management_app/ui/widgets/screen_background.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
-  const ResetPasswordScreen({super.key});
+  final String email;
+  final String otp;
+
+  const ResetPasswordScreen({Key? key, required this.email, required this.otp})
+      : super(key: key);
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _passwordTEController = TextEditingController();
+  bool _inProgress = false;
+
+  Future<void> _resetPassword() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    _inProgress = true;
+    setState(() {});
+
+    final Map<String, dynamic> body = {
+      "email": widget.email,
+      "OTP": widget.otp,
+      "password": _passwordTEController.text.trim(),
+    };
+
+    NetworkResponse response =
+    await NetworkCaller.postRequest(url: Urls.resetPassword, body: body);
+
+    _inProgress = false;
+    setState(() {});
+
+    if (response.isSuccess) {
+      ShowSnackBarMessage(context, 'Password reset successfully!', false);
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const SigninScreen()),
+            (_) => false,
+      );
+    } else {
+      ShowSnackBarMessage(
+          context, response.errorMessage ?? 'Password reset failed', true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    TextTheme textTheme = Theme.of(context).textTheme;
     return Scaffold(
       body: ScreenBackground(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 82),
                 Text(
-                  'Set Password',
-                  style: textTheme.displaySmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Minimum Number of Password should be 8 letters',
-                  style: textTheme.titleSmall?.copyWith(
-                    color: Colors.grey,
-                  ),
+                  'Reset Password',
+                  style: Theme.of(context).textTheme.displaySmall,
                 ),
                 const SizedBox(height: 24),
-                _buildResetpasswordFrom(),
-                const SizedBox(height: 48),
-                Center(
-                  child: Column(
-                    children: [
-                      _buildHaveAccountSection(),
-                    ],
+                TextFormField(
+                  controller: _passwordTEController,
+                  obscureText: true,
+                  decoration:
+                  const InputDecoration(hintText: 'Enter new password'),
+                  validator: (value) =>
+                  value?.isEmpty ?? true ? 'Enter a valid password' : null,
+                ),
+                const SizedBox(height: 24),
+                Visibility(
+                  visible: !_inProgress,
+                  replacement: const CircularProgressIndicator(),
+                  child: ElevatedButton(
+                    onPressed: _resetPassword,
+                    child: const Text('Reset Password'),
                   ),
                 ),
               ],
@@ -54,64 +94,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  Widget _buildResetpasswordFrom() {
-    return Column(
-      children: [
-        TextFormField(
-          decoration: const InputDecoration(
-            hintText: 'Password',
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          decoration: const InputDecoration(
-            hintText: 'Confirm Password',
-          ),
-        ),
-        const SizedBox(height: 24),
-        ElevatedButton(
-          onPressed: _onTapSubmitButton,
-          child: const Icon(Icons.arrow_circle_right_outlined),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHaveAccountSection() {
-    return RichText(
-      text: TextSpan(
-        style: const TextStyle(
-          color: Colors.black,
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
-          letterSpacing: 0.5,
-        ),
-        text: "Have account?",
-        children: [
-          TextSpan(
-              text: 'Sign In',
-              style: const TextStyle(
-                color: AppColors.themeColor,
-              ),
-              recognizer: TapGestureRecognizer()..onTap = _onTapSignin),
-        ],
-      ),
-    );
-  }
-
-  void _onTapSubmitButton() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const SigninScreen()),
-      (_) => false,
-    );
-  }
-
-  void _onTapSignin() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const SigninScreen()),
-      (_) => false,
-    );
+  @override
+  void dispose() {
+    _passwordTEController.dispose();
+    super.dispose();
   }
 }

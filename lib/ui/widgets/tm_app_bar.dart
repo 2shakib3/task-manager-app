@@ -19,7 +19,7 @@ class TMAppBar extends StatelessWidget implements PreferredSizeWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const ProfileScreen(),
+            builder: (context) => ProfileScreen(),
           ),
         );
       },
@@ -32,23 +32,17 @@ class TMAppBar extends StatelessWidget implements PreferredSizeWidget {
               radius: 16,
             ),
             const SizedBox(width: 16),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Md Shakib Hasan',
-                    style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600),
+                    AuthController.userData?.fullName ?? 'User Name',
+                    style: TextStyle(fontSize: 18),
                   ),
                   Text(
-                    'shakibspostbox@gmail.com',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white,
-                    ),
+                    AuthController.userData?.email ?? 'No Email',
+                    style: TextStyle(fontSize: 14),
                   ),
                 ],
               ),
@@ -56,11 +50,7 @@ class TMAppBar extends StatelessWidget implements PreferredSizeWidget {
             IconButton(
               onPressed: () async {
                 await AuthController.clearUserToken();
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SigninScreen(),
-                  ),
+                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const SigninScreen(),),
                   (_) => false,
                 );
               },

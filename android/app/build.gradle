@@ -8,7 +8,9 @@ plugins {
 android {
     namespace = "com.example.task_management_app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+
+    // Explicitly set the NDK version to match plugin requirements
+    ndkVersion = "26.1.10909125" // Set the correct NDK version here
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8

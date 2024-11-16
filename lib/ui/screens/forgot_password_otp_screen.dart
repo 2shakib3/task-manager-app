@@ -1,13 +1,16 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:task_management_app/data/models/network_response.dart';
+import 'package:task_management_app/data/service/network_caller.dart';
+import 'package:task_management_app/data/utils/urls.dart';
 import 'package:task_management_app/ui/screens/reset_password_screen.dart';
-import 'package:task_management_app/ui/screens/signin_screen.dart';
-import 'package:task_management_app/ui/utils/app_colors.dart';
+import 'package:task_management_app/ui/widgets/snack_bar_message.dart';
 import 'package:task_management_app/ui/widgets/screen_background.dart';
 
 class ForgotPasswordOtpScreen extends StatefulWidget {
-  const ForgotPasswordOtpScreen({super.key});
+  final String email;
+
+  const ForgotPasswordOtpScreen({Key? key, required this.email})
+      : super(key: key);
 
   @override
   State<ForgotPasswordOtpScreen> createState() =>
@@ -15,38 +18,70 @@ class ForgotPasswordOtpScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _otpTEController = TextEditingController();
+  bool _inProgress = false;
+
+  Future<void> _verifyOtp() async {
+    _inProgress = true;
+    setState(() {});
+
+    final String url = Urls.verifyOTP(widget.email, _otpTEController.text.trim());
+
+    // Call the NetworkCaller method without needing to pass token again
+    NetworkResponse response = await NetworkCaller.getRequest(url: url);
+
+    _inProgress = false;
+    setState(() {});
+
+    if (response.isSuccess) {
+      ShowSnackBarMessage(context, 'OTP verified successfully!', false);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ResetPasswordScreen(
+            email: widget.email,
+            otp: _otpTEController.text.trim(),
+          ),
+        ),
+      );
+    } else {
+      ShowSnackBarMessage(context, response.errorMessage ?? 'Invalid OTP', true);
+    }
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
-    TextTheme textTheme = Theme.of(context).textTheme;
     return Scaffold(
       body: ScreenBackground(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 82),
                 Text(
-                  'Pin Verification',
-                  style: textTheme.displaySmall
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'A 6 digit verification otp Has been sent to your email address',
-                  style: textTheme.titleSmall?.copyWith(
-                    color: Colors.grey,
-                  ),
+                  'Verify OTP',
+                  style: Theme.of(context).textTheme.displaySmall,
                 ),
                 const SizedBox(height: 24),
-                _buildVerifyEmailFrom(),
-                const SizedBox(height: 48),
-                Center(
-                  child: Column(
-                    children: [
-                      _buildHaveAccountSection(),
-                    ],
+                TextFormField(
+                  controller: _otpTEController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(hintText: 'Enter OTP'),
+                  validator: (value) =>
+                  value?.isEmpty ?? true ? 'Enter a valid OTP' : null,
+                ),
+                const SizedBox(height: 24),
+                Visibility(
+                  visible: !_inProgress,
+                  replacement: const CircularProgressIndicator(),
+                  child: ElevatedButton(
+                    onPressed: _verifyOtp,
+                    child: const Text('Verify OTP'),
                   ),
                 ),
               ],
@@ -57,74 +92,9 @@ class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
     );
   }
 
-  Widget _buildVerifyEmailFrom() {
-    return Column(
-      children: [
-        PinCodeTextField(
-          length: 6,
-          obscureText: false,
-          animationType: AnimationType.fade,
-          keyboardType: TextInputType.number,
-          pinTheme: PinTheme(
-            shape: PinCodeFieldShape.box,
-            borderRadius: BorderRadius.circular(5),
-            fieldHeight: 50,
-            fieldWidth: 40,
-            activeFillColor: Colors.white,
-            inactiveFillColor: Colors.white,
-            selectedFillColor: Colors.white,
-          ),
-          animationDuration: const Duration(milliseconds: 300),
-          backgroundColor: Colors.transparent,
-          enableActiveFill: true,
-          appContext: context,
-        ),
-        const SizedBox(height: 24),
-        ElevatedButton(
-          onPressed: _onTapSubmitButton,
-          child: const Icon(Icons.arrow_circle_right_outlined),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHaveAccountSection() {
-    return RichText(
-      text: TextSpan(
-        style: const TextStyle(
-          color: Colors.black,
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
-          letterSpacing: 0.5,
-        ),
-        text: "Have account?",
-        children: [
-          TextSpan(
-              text: 'Sign In',
-              style: const TextStyle(
-                color: AppColors.themeColor,
-              ),
-              recognizer: TapGestureRecognizer()..onTap = _onTapSignin),
-        ],
-      ),
-    );
-  }
-
-  void _onTapSubmitButton() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ResetPasswordScreen(),
-      ),
-    );
-  }
-
-  void _onTapSignin() {
-    Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const SigninScreen(),
-        ),
-        (_) => false);
+  @override
+  void dispose() {
+    _otpTEController.dispose();
+    super.dispose();
   }
 }

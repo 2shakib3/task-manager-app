@@ -1,7 +1,4 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:task_management_app/ui/controller/auth_controller.dart';
 import 'package:task_management_app/ui/widgets/tm_app_bar.dart';
 import 'package:task_management_app/data/service/network_caller.dart';
@@ -17,13 +14,10 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _emailTEController = TextEditingController();
-  final TextEditingController _firstNameTEController = TextEditingController();
+  final TextEditingController _fristNameTEController = TextEditingController();
   final TextEditingController _lastNameTEController = TextEditingController();
   final TextEditingController _mobileTEController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  File? _profileImage;
-
-  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -32,26 +26,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _setUserData() {
-    // Prefill the form fields with user data
+    // Fetch the user's data and prefill the form fields
     _emailTEController.text = AuthController.userData?.email ?? 'email@mail.com';
-    _firstNameTEController.text = AuthController.userData?.firstName ?? 'First Name';
+    _fristNameTEController.text = AuthController.userData?.firstName ?? 'First Name';
     _lastNameTEController.text = AuthController.userData?.lastName ?? 'Last Name';
     _mobileTEController.text = AuthController.userData?.mobile ?? '01828066845';
-  }
-
-  Future<void> _pickImage() async {
-    // Pick an image from the gallery or camera
-    final XFile? pickedFile = await _picker.pickImage(
-      source: ImageSource.gallery, // Change to ImageSource.camera for camera
-      maxWidth: 400,
-      maxHeight: 400,
-    );
-
-    if (pickedFile != null) {
-      setState(() {
-        _profileImage = File(pickedFile.path);
-      });
-    }
   }
 
   @override
@@ -78,7 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildPhotoPicker(),
               const SizedBox(height: 16),
               TextFormField(
-                controller: _firstNameTEController,
+                controller: _fristNameTEController,
                 decoration: const InputDecoration(
                   hintText: 'First Name',
                 ),
@@ -109,7 +88,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _passwordController,
-                obscureText: true,
+                obscureText: false,
                 decoration: const InputDecoration(
                   hintText: 'Password',
                 ),
@@ -127,78 +106,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Photo picker widget that allows the user to select a photo
+  // Placeholder for the photo picker widget
   Widget _buildPhotoPicker() {
-    return GestureDetector(
-      onTap: _pickImage,
-      child: Container(
-        height: 100,
-        width: 100,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: Colors.grey[300],
-        ),
-        alignment: Alignment.center,
-        child: _profileImage == null
-            ? const Text(
-          'photo',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.black),
-        )
-            : ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.file(
-            _profileImage!,
+    return Container(
+      height: 50,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+      ),
+      child: Row(
+        children: [
+          Container(
             width: 100,
-            height: 100,
-            fit: BoxFit.cover,
+            height: 50,
+            decoration: const BoxDecoration(
+              color: Colors.grey,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(8),
+                bottomLeft: Radius.circular(8),
+              ),
+            ),
+            alignment: Alignment.center,
+            child: const Text(
+              'Photo',
+              style:
+              TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
+            ),
           ),
-        ),
+          const SizedBox(width: 8),
+          const Text('Selected Photo'),
+        ],
       ),
     );
   }
 
+  // Update button action
   void _onTapUpdateButton() async {
+    // Collect updated data from the form fields
     final updatedProfileData = {
       'email': _emailTEController.text,
-      'firstName': _firstNameTEController.text,
+      'firstName': _fristNameTEController.text,
       'lastName': _lastNameTEController.text,
       'mobile': _mobileTEController.text,
+      'password': _passwordController.text,
     };
 
-    // Only add the password if it is not empty
-    if (_passwordController.text.isNotEmpty) {
-      updatedProfileData['password'] = _passwordController.text;
-    }
-
-    // Include the profile image if it is updated
-    if (_profileImage != null) {
-      updatedProfileData['profileImage'] = (await _getImageBytes())!;
-    }
-
+    // Call the API to update the profile using the NetworkCaller
     NetworkResponse response = await NetworkCaller.postRequest(
-      url: Urls.profileUpdate,
+      url: Urls.profileUpdate, // Profile update API
       body: updatedProfileData,
     );
 
     if (response.isSuccess) {
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile Updated')),
-      );
+      // On success, show a success message
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile Updated')));
     } else {
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${response.errorMessage}')),
-      );
+      // On failure, show an error message
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${response.errorMessage}')));
     }
-  }
-
-  Future<String?> _getImageBytes() async {
-    if (_profileImage != null) {
-      final bytes = await _profileImage!.readAsBytes();
-      return base64Encode(bytes);
-    }
-    return null;
   }
 }
